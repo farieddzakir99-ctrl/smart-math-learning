@@ -1,0 +1,34 @@
+PENGAKTIFAN LAPORAN HASIL BELAJAR (WAJIB JIKA INGIN NILAI SISWA TERKIRIM KE GURU)
+
+Aplikasi tetap dapat digunakan tanpa tabel ini. Tanpa tabel, nilai hanya tersimpan di perangkat siswa. Untuk laporan online, buka Supabase > SQL Editor, lalu jalankan SQL berikut sebagai pemilik proyek:
+
+create table if not exists public.student_results (
+  id uuid primary key default gen_random_uuid(),
+  student_name text not null,
+  kelas integer not null check (kelas between 7 and 9),
+  quiz_title text not null,
+  score integer not null check (score between 0 and 100),
+  correct integer not null,
+  total integer not null,
+  completed_at timestamptz not null default now()
+);
+
+alter table public.student_results enable row level security;
+grant insert on public.student_results to anon, authenticated;
+grant select on public.student_results to authenticated;
+
+create policy "Students can submit quiz results"
+on public.student_results for insert to anon, authenticated
+with check (true);
+
+create policy "Admins can view student results"
+on public.student_results for select to authenticated
+using (exists (select 1 from public.admin_users where user_id = auth.uid()));
+
+CATATAN:
+- Jangan pernah memasukkan service_role/secret key ke aplikasi.
+- Siswa mengisi nama dan kelas melalui tombol profil di beranda.
+- Nilai disimpan lokal terlebih dahulu. Saat online, aplikasi mencoba mengirimkannya ke tabel student_results.
+- Admin login melalui alamat situs dengan tambahan #/admin, lalu buka tab Laporan.
+- Laporan online hanya mulai terkumpul setelah tabel dan policy di atas dibuat.
+- File video lokal hanya tersedia di perangkat tempat file diunggah; gunakan video YouTube untuk konten bersama.
